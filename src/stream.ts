@@ -1,8 +1,8 @@
 
-import { Stream } from 'stream'
 import { Response } from './base'
 import is from '@sindresorhus/is'
 import { ServerResponse } from 'http'
+import { Stream, Writable } from 'stream'
 
 export class StreamResponse extends Response {
   /**
@@ -13,10 +13,7 @@ export class StreamResponse extends Response {
    * @public
    */
   public constructor (stream: Stream) {
-    super(stream)
-
-    // default content type
-    this.set('Content-Type', 'application/octet-stream')
+    super(stream, { 'Content-Type': 'application/octet-stream' })
   }
 
   /**
@@ -26,19 +23,27 @@ export class StreamResponse extends Response {
    * @public
    */
   send (res: ServerResponse): any {
-    // ignore
     if (!this._isWritable(res)) return
 
-    // head
     this._writeHeaders(res)
 
-    let { body: stream } = this
-
-    // body
-    stream.pipe(res)
-
-    return Promise.all([stream, res].map(_toPromise))
+    return _pipe(this.body, res)
   }
+}
+
+/**
+ * Pipe streams and return a promise
+ * 
+ * @param source 
+ * @param destination 
+ * @private
+ */
+function _pipe (source: Stream, destination: Writable): Promise<void> {
+  let promise = _toPromise(source)
+
+  source.pipe(destination)
+
+  return promise
 }
 
 /**

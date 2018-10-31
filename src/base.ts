@@ -1,7 +1,7 @@
 
 import is from '@sindresorhus/is'
 import { contentType } from 'mime-types'
-import { OutgoingHttpHeaders, ServerResponse } from 'http'
+import { OutgoingHttpHeaders, ServerResponse, STATUS_CODES } from 'http'
 
 export class Response {
   /**
@@ -22,21 +22,24 @@ export class Response {
   /**
    * The response headers
    */
-  public headers: OutgoingHttpHeaders = {}
+  public headers: OutgoingHttpHeaders
 
   /**
    * Initialize a new response builder
    * 
    * @param body The response body
+   * @param headers 
    * @constructor
    * @public
    */
-  public constructor (body: any) {
+  public constructor (body: any, headers = {}) {
     if (body != null) {
       this.body = body
       this.statusCode = 200
       this.statusMessage = 'OK'
     }
+
+    this.headers = headers
   }
 
   /**
@@ -46,8 +49,9 @@ export class Response {
    * @param reasonPhase The status message
    * @throws `TypeError` if the status code is not a number
    * @throws `RangeError` if the status code is smaller than 100 or larger than 999
+   * @public
    */
-  public status (code: number, reasonPhase = ''): this {
+  public status (code: number, reasonPhase = STATUS_CODES[code]): this {
     if (!is.number(code)) {
       throw new TypeError('The status code must be a number')
     }
@@ -56,7 +60,7 @@ export class Response {
       throw new RangeError('The status code should be between 100 and 999')
     }
 
-    this.statusMessage = reasonPhase
+    this.statusMessage = reasonPhase || ''
     this.statusCode = code
 
     return this
@@ -74,6 +78,9 @@ export class Response {
    *     response.type('html')
    *     response.type('json')
    *     response.type('png')
+   * 
+   * @param value 
+   * @public
    */
   public type (value: string): this {
     let type = contentType(value)
@@ -85,6 +92,9 @@ export class Response {
 
   /**
    * Set `Content-Length` reponse header
+   * 
+   * @param value 
+   * @public
    */
   public length (value: number): this {
     return this.set('Content-Length', value)
@@ -92,6 +102,9 @@ export class Response {
 
   /**
    * Set the `Last-Modified` response header
+   * 
+   * @param value 
+   * @public
    */
   public lastModified (value: string | Date): this {
     if (is.string(value)) value = new Date(value)
@@ -109,6 +122,9 @@ export class Response {
    *     response.etag('md5hashsum')
    *     response.etag('"md5hashsum"')
    *     response.etag('W/"123456789"')
+   * 
+   * @param value 
+   * @public
    */
   public etag (value: string): this {
     if (!/^(W\/)?"/.test(value)) value = `"${value}"`
@@ -118,6 +134,9 @@ export class Response {
 
   /**
    * Set the `Location` response header
+   * 
+   * @param url 
+   * @public
    */
   public location (url: string): this {
     return this.set('Location', encodeURI(url))
@@ -125,21 +144,20 @@ export class Response {
 
   /**
    * Append `field` to the `Vary` header
+   * 
+   * @param headers 
+   * @public
    */
   public vary (...headers: string[]): this {
     // match all
-    if (headers.includes('*')) {
-      return this.set('Vary', '*')
-    }
+    if (headers.includes('*')) return this.set('Vary', '*')
 
     // first time
-    if (!this.has('Vary')) {
-      return this.set('Vary', String(headers))
-    }
-
-    let value = this.get('Vary') as string || ''
+    if (!this.has('Vary')) return this.set('Vary', headers.join(', '))
 
     // existing
+    let value = this.get('Vary') as string
+
     if (value !== '*') {
       for (let name of headers) {
         if (!value.includes(name)) value += `, ${name}`
@@ -153,6 +171,9 @@ export class Response {
 
   /**
    * Append to the `Set-Cookie` header
+   * 
+   * @param cookie `key=value` expression
+   * @public
    */
   public setCookie (cookie: string): this {
     return this.append('Set-Cookie', cookie)
@@ -161,7 +182,8 @@ export class Response {
   /**
    * Get the response header if present, or undefined
    * 
-   * @param header
+   * @param header 
+   * @public
    */
   public get (header: string): string | number | string[] | undefined {
     return this.headers[header.toLowerCase()]
@@ -174,7 +196,8 @@ export class Response {
    * 
    *    response.set({ 'Accept': 'text/plain', 'X-API-Key': 'tobi' })
    * 
-   * @param headers
+   * @param headers 
+   * @public
    */
   public set (headers: { [field: string]: string | number | string[] }): this
 
@@ -186,8 +209,9 @@ export class Response {
    *    response.set('Foo', ['bar', 'baz'])
    *    response.set('Accept', 'application/json')
    * 
-   * @param header
-   * @param value
+   * @param header 
+   * @param value 
+   * @public
    */
   public set (header: string, value: string | number | string[]): this
   public set (header: any, value?: any) {
@@ -211,14 +235,15 @@ export class Response {
    *    this.append('Set-Cookie', 'foo=bar; Path=/; HttpOnly')
    *    this.append('Warning', '199 Miscellaneous warning')
    * 
-   * @param header
-   * @param value
+   * @param header 
+   * @param value 
+   * @public
    */
   public append (header: string, value: string | string[]): this {
     if (this.has(header)) {
       let oldValue = this.get(header)
 
-      if (!Array.isArray(oldValue)) {
+      if (!is.array(oldValue)) {
         oldValue = [String(oldValue)]
       }
 
@@ -231,7 +256,8 @@ export class Response {
   /**
    * Check if response header is defined
    * 
-   * @param header
+   * @param header 
+   * @public
    */
   public has (header: string): boolean {
     return this.get(header) !== undefined
@@ -240,7 +266,8 @@ export class Response {
   /**
    * Remove the response header
    * 
-   * @param header
+   * @param header 
+   * @public
    */
   public remove (header: string): this {
     delete this.headers[header.toLowerCase()]
@@ -250,7 +277,8 @@ export class Response {
   /**
    * Reset all response headers
    * 
-   * @param headers
+   * @param headers 
+   * @public
    */
   public reset (headers: { [field: string]: string | number | string[] } = {}): this {
     this.headers = headers
@@ -264,13 +292,10 @@ export class Response {
    * @public
    */
   public send (res: ServerResponse): void {
-    // ignore
     if (!this._isWritable(res)) return
 
-    // head
     this._writeHeaders(res)
 
-    // body
     res.end(this.body)
   }
 
@@ -281,14 +306,11 @@ export class Response {
    * @private
    */
   protected _writeHeaders (res: ServerResponse): void {
-    // ignore
     if (res.headersSent) return
 
-    // status
     res.statusCode = this.statusCode
     res.statusMessage = this.statusMessage
 
-    // headers
     for (let field in this.headers) {
       res.setHeader(field, this.headers[field] as any)
     }

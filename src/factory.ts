@@ -43,9 +43,10 @@ export function createResponse (content?: any): Response {
  * @public
  */
 export function createTextResponse (text: string): Response {
-  return new Response(text)
-    .set('Content-Type', 'text/plain; charset=utf-8')
-    .set('Content-Length', Buffer.byteLength(text))
+  return new Response(text, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Content-Length': Buffer.byteLength(text)
+  })
 }
 
 /**
@@ -55,7 +56,10 @@ export function createTextResponse (text: string): Response {
  * @public
  */
 export function createHtmlResponse (html: string): Response {
-  return createTextResponse(html).set('Content-Type', 'text/html; charset=utf-8')
+  return new Response(html, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': Buffer.byteLength(html)
+  })
 }
 
 /**
@@ -65,9 +69,10 @@ export function createHtmlResponse (html: string): Response {
  * @public
  */
 export function createBufferResponse (buffer: Buffer): Response {
-  return new Response(buffer)
-    .set('Content-Length', buffer.length)
-    .set('Content-Type', 'application/octet-stream')
+  return new Response(buffer, {
+    'Content-Type': 'application/octet-stream',
+    'Content-Length': buffer.length
+  })
 }
 
 /**

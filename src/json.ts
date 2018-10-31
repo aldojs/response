@@ -11,10 +11,7 @@ export class JsonResponse extends Response {
    * @public
    */
   public constructor (json: object) {
-    super(json)
-
-    // default content type
-    this.set('Content-Type', 'application/json; charset=utf-8')
+    super(json, { 'Content-Type': 'application/json; charset=utf-8' })
   }
 
   /**
