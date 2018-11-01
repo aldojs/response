@@ -1,6 +1,6 @@
 
 import 'mocha'
-import assert from 'assert'
+import * as assert from 'assert'
 import { createResponse } from '../src'
 
 describe('response.lastModified(value)', () => {
