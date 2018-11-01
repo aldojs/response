@@ -1,5 +1,5 @@
 
-HTTP(S) response utilities to use in conjuction to [@aldojs/http](https://www.npmjs.com/package/@aldojs/http) module.
+HTTP(S) response utilities to use in conjunction to [@aldojs/http](https://www.npmjs.com/package/@aldojs/http) module.
 
 ## Install
 
